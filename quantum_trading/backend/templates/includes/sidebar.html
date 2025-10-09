@@ -1,0 +1,89 @@
+<!-- templates/includes/sidebar.html -->
+<nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse border-end border-secondary">
+    <div class="position-sticky pt-3">
+        <!-- Quick Actions -->
+        <div class="p-3 border-bottom border-secondary">
+            <button class="btn btn-warning btn-sm w-100 mb-2" data-bs-toggle="modal" data-bs-target="#quickTradeModal">
+                <i class="fas fa-bolt me-1"></i>Quick Trade
+            </button>
+            <button class="btn btn-outline-info btn-sm w-100" onclick="runQuickAnalysis()">
+                <i class="fas fa-chart-bar me-1"></i>Quick Analysis
+            </button>
+        </div>
+
+        <!-- Navigation Menu -->
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'dashboard' %}active bg-primary{% endif %}"
+                   href="{% url 'dashboard' %}">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </li>
+
+            <!-- Prediction Section -->
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'predictions' %}active bg-primary{% endif %}"
+                   href="{% url 'prediction_dashboard' %}">
+                    <i class="fas fa-brain me-2"></i>Quantum Analysis
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'analysis' %}active bg-primary{% endif %}"
+                   href="{% url 'quantum_analysis' %}">
+                    <i class="fas fa-chart-line me-2"></i>Stock Analysis
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'signals' %}active bg-primary{% endif %}"
+                   href="{% url 'signal_list' %}">
+                    <i class="fas fa-bell me-2"></i>Trading Signals
+                </a>
+            </li>
+
+            <!-- Trading Section -->
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'portfolio' %}active bg-primary{% endif %}"
+                   href="{% url 'portfolio' %}">
+                    <i class="fas fa-wallet me-2"></i>Portfolio
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'orders' %}active bg-primary{% endif %}"
+                   href="{% url 'orders' %}">
+                    <i class="fas fa-exchange-alt me-2"></i>Orders
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'trading_signals' %}active bg-primary{% endif %}"
+                   href="{% url 'trading_signals' %}">
+                    <i class="fas fa-robot me-2"></i>Auto Trading
+                </a>
+            </li>
+
+            <!-- Market Section -->
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_tab == 'market' %}active bg-primary{% endif %}"
+                   href="{% url 'market_overview' %}">
+                    <i class="fas fa-globe me-2"></i>Market Overview
+                </a>
+            </li>
+        </ul>
+
+        <!-- System Status -->
+        <div class="p-3 mt-4 border-top border-secondary">
+            <h6 class="text-muted">System Status</h6>
+            <div class="d-flex justify-content-between small">
+                <span>Engine:</span>
+                <span class="badge bg-success" id="engine-status">Online</span>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span>Data Feed:</span>
+                <span class="badge bg-success" id="data-status">Live</span>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span>API:</span>
+                <span class="badge bg-success" id="api-status">Connected</span>
+            </div>
+        </div>
+    </div>
+</nav>

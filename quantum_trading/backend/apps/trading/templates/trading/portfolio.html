@@ -1,0 +1,311 @@
+<!-- templates/trading/portfolio.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Portfolio - Quantum Trading System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .portfolio-card {
+        background: linear-gradient(145deg, #1a1d23, #23272e);
+        border: 1px solid #2d3138;
+        border-radius: 12px;
+    }
+    .position-row:hover {
+        background: rgba(255,255,255,0.05);
+        transition: background 0.3s ease;
+    }
+    .performance-positive { color: #00d6a1; }
+    .performance-negative { color: #ff6b6b; }
+    .allocation-bar { height: 8px; border-radius: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom border-secondary">
+    <h1 class="h2 text-warning">
+        <i class="fas fa-wallet me-2"></i>Portfolio Management
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-warning me-2" onclick="refreshPortfolio()">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#rebalanceModal">
+            <i class="fas fa-balance-scale me-1"></i>Rebalance
+        </button>
+    </div>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card portfolio-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Total Value</h6>
+                        <h3 class="text-warning">${{ performance_metrics.total_value|floatformat:2 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-line fa-2x text-warning"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-success">+{{ performance_metrics.pnl_percentage|floatformat:2 }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card portfolio-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Total P&L</h6>
+                        <h3 class="{% if performance_metrics.total_pnl >= 0 %}performance-positive{% else %}performance-negative{% endif %}">
+                            ${{ performance_metrics.total_pnl|floatformat:2 }}
+                        </h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-money-bill-wave fa-2x text-info"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge {% if performance_metrics.total_pnl >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                        {{ performance_metrics.pnl_percentage|floatformat:2 }}%
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card portfolio-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Active Positions</h6>
+                        <h3 class="text-info">{{ active_positions|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-layer-group fa-2x text-info"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-info">Live</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card portfolio-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Cash Balance</h6>
+                        <h3 class="text-success">
+                            ${{ trading_accounts.0.cash|default:0|floatformat:2 }}
+                        </h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-coins fa-2x text-success"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-success">Available</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Active Positions -->
+    <div class="col-lg-8 mb-4">
+        <div class="card portfolio-card">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-layer-group me-2"></i>Active Positions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Avg Price</th>
+                            <th>Current</th>
+                            <th>Market Value</th>
+                            <th>P&L</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for position in active_positions %}
+                        <tr class="position-row">
+                            <td class="fw-bold">{{ position.asset.symbol }}</td>
+                            <td>{{ position.quantity|floatformat:4 }}</td>
+                            <td>${{ position.average_entry_price|floatformat:2 }}</td>
+                            <td>${{ position.current_price|floatformat:2 }}</td>
+                            <td>${{ position.market_value|floatformat:2 }}</td>
+                            <td class="{% if position.unrealized_pnl >= 0 %}performance-positive{% else %}performance-negative{% endif %}">
+                                ${{ position.unrealized_pnl|floatformat:2 }}
+                                <br>
+                                <small>({{ position.unrealized_pnl_percent|floatformat:2 }}%)</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-success"
+                                            onclick="quickTrade('{{ position.asset.symbol }}', 'BUY')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger"
+                                            onclick="quickTrade('{{ position.asset.symbol }}', 'SELL')">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info"
+                                            onclick="analyzeStock('{{ position.asset.symbol }}')">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-box-open fa-2x mb-3"></i>
+                                <p>No active positions</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Allocation -->
+    <div class="col-lg-4 mb-4">
+        <div class="card portfolio-card h-100">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-chart-pie me-2"></i>Portfolio Allocation
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="allocationChart" style="height: 300px;"></div>
+
+                <!-- Allocation Breakdown -->
+                <div class="mt-4">
+                    <h6 class="text-muted mb-3">Holdings Breakdown</h6>
+                    {% for position in active_positions %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold">{{ position.asset.symbol }}</span>
+                            <span>{{ position.portfolio_percentage|floatformat:1 }}%</span>
+                        </div>
+                        <div class="allocation-bar bg-secondary">
+                            <div class="allocation-bar bg-warning"
+                                 style="width: {{ position.portfolio_percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card portfolio-card">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-chart-area me-2"></i>Portfolio Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="portfolioChart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function refreshPortfolio() {
+        location.reload();
+    }
+
+    function quickTrade(symbol, side) {
+        // Implement quick trade functionality
+        window.location.href = `{% url 'orders' %}?symbol=${symbol}&side=${side}`;
+    }
+
+    function analyzeStock(symbol) {
+        window.location.href = `{% url 'quantum_analysis' %}?symbol=${symbol}`;
+    }
+
+    // Initialize allocation chart
+    function initAllocationChart() {
+        const data = [{
+            values: [{% for position in active_positions %}{{ position.market_value }},{% endfor %}],
+        labels: [{% for position in active_positions %}'{{ position.asset.symbol }}',{% endfor %}],
+        type: 'pie',
+            hole: 0.4,
+            marker: {
+            colors: ['#00d6a1', '#ff6b6b', '#6c757d', '#ffd166', '#118ab2', '#ef476f']
+        }
+    }];
+
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#fff' },
+            showlegend: true,
+            legend: {
+                orientation: 'h',
+                y: -0.1
+            }
+        };
+
+        Plotly.newPlot('allocationChart', data, layout);
+    }
+
+    // Initialize portfolio chart
+    function initPortfolioChart() {
+        const data = [{
+            x: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            y: [10000, 10500, 11000, 11500, 11200, 12000],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Portfolio Value',
+            line: { color: '#00d6a1', width: 3 }
+        }];
+
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#fff' },
+            xaxis: { gridcolor: '#2d3138' },
+            yaxis: { gridcolor: '#2d3138' },
+            margin: { t: 30, r: 30, b: 30, l: 50 },
+            showlegend: false
+        };
+
+        Plotly.newPlot('portfolioChart', data, layout);
+    }
+
+    $(document).ready(function() {
+        initAllocationChart();
+        initPortfolioChart();
+    });
+</script>
+{% endblock %}

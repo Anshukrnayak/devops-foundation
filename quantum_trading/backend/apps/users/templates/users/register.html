@@ -1,0 +1,155 @@
+<!-- templates/users/register.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register - Quantum Trading System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card analysis-card">
+                <div class="card-body p-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <i class="fas fa-atom fa-3x text-warning mb-3"></i>
+                        <h2 class="text-warning fw-bold">Create Account</h2>
+                        <p class="text-muted">Start your quantum trading journey</p>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Please correct the errors below.
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Personal Information -->
+                            <div class="col-md-6">
+                                <h5 class="text-warning mb-3"><i class="fas fa-user me-2"></i>Personal Information</h5>
+
+                                <div class="mb-3">
+                                    <label for="id_email" class="form-label text-light">Email Address</label>
+                                    <input type="email" name="email" class="form-control bg-dark text-light border-secondary"
+                                           id="id_email" value="{{ form.email.value|default:'' }}" required>
+                                    {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_first_name" class="form-label text-light">First Name</label>
+                                    <input type="text" name="first_name" class="form-control bg-dark text-light border-secondary"
+                                           id="id_first_name" value="{{ form.first_name.value|default:'' }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_last_name" class="form-label text-light">Last Name</label>
+                                    <input type="text" name="last_name" class="form-control bg-dark text-light border-secondary"
+                                           id="id_last_name" value="{{ form.last_name.value|default:'' }}" required>
+                                </div>
+                            </div>
+
+                            <!-- Trading Profile -->
+                            <div class="col-md-6">
+                                <h5 class="text-warning mb-3"><i class="fas fa-chart-line me-2"></i>Trading Profile</h5>
+
+                                <div class="mb-3">
+                                    <label for="id_risk_profile" class="form-label text-light">Risk Profile</label>
+                                    <select name="risk_profile" class="form-select bg-dark text-light border-secondary"
+                                            id="id_risk_profile" required>
+                                        <option value="">Select your risk tolerance</option>
+                                        {% for value, label in form.risk_profile.field.choices %}
+                                        <option value="{{ value }}" {% if form.risk_profile.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_trading_experience" class="form-label text-light">
+                                        Trading Experience (Years)
+                                    </label>
+                                    <input type="number" name="trading_experience"
+                                           class="form-control bg-dark text-light border-secondary"
+                                           id="id_trading_experience" min="0" max="50"
+                                           value="{{ form.trading_experience.value|default:'0' }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_initial_capital" class="form-label text-light">
+                                        Initial Capital ($)
+                                    </label>
+                                    <input type="number" name="initial_capital"
+                                           class="form-control bg-dark text-light border-secondary"
+                                           id="id_initial_capital" min="100" step="100"
+                                           value="{{ form.initial_capital.value|default:'10000' }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Section -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3"><i class="fas fa-lock me-2"></i>Security</h5>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_password1" class="form-label text-light">Password</label>
+                                        <input type="password" name="password1"
+                                               class="form-control bg-dark text-light border-secondary"
+                                               id="id_password1" required>
+                                        {% if form.password1.errors %}
+                                        <div class="text-danger small">{{ form.password1.errors }}</div>
+                                        {% endif %}
+                                        <div class="form-text text-muted">
+                                            <small>• At least 8 characters<br>• Include numbers and symbols</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_password2" class="form-label text-light">Confirm Password</label>
+                                        <input type="password" name="password2"
+                                               class="form-control bg-dark text-light border-secondary"
+                                               id="id_password2" required>
+                                        {% if form.password2.errors %}
+                                        <div class="text-danger small">{{ form.password2.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Submit -->
+                        <div class="mt-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                                <label class="form-check-label text-muted" for="agreeTerms">
+                                    I agree to the <a href="#" class="text-warning">Terms of Service</a> and
+                                    <a href="#" class="text-warning">Privacy Policy</a>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">
+                                <i class="fas fa-rocket me-2"></i>Launch Quantum Trading
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Login Link -->
+                    <div class="text-center mt-4">
+                        <p class="text-muted">Already have an account?
+                            <a href="{% url 'login' %}" class="text-warning text-decoration-none fw-bold">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

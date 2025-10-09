@@ -1,0 +1,68 @@
+<!-- templates/includes/header.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+    <div class="container-fluid">
+        <!-- Brand -->
+        <a class="navbar-brand fw-bold text-warning" href="{% url 'dashboard' %}">
+            <i class="fas fa-atom me-2"></i>Quantum Trader
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar Content -->
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Quick Stats -->
+            <div class="navbar-nav me-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-light" href="#" data-bs-toggle="dropdown">
+                        <i class="fas fa-chart-line me-1"></i>
+                        <span id="market-status" class="badge bg-success">Live</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-dark">
+                        <div class="px-3 py-2">
+                            <small class="text-muted">Market Status</small>
+                            <div class="d-flex justify-content-between">
+                                <span>SPY:</span>
+                                <span id="spy-price" class="text-success">$455.67</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>VIX:</span>
+                                <span id="vix-price" class="text-danger">15.23</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Menu -->
+            <div class="navbar-nav">
+                {% if user.is_authenticated %}
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-light" href="#" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {{ user.email }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'profile' %}">
+                            <i class="fas fa-cog me-2"></i>Settings
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'trading_preferences' %}">
+                            <i class="fas fa-sliders-h me-2"></i>Trading Preferences
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-warning" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <a class="nav-link text-light" href="{% url 'login' %}">
+                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,177 @@
+/* static/css/base.css */
+:root {
+    --primary-dark: #0d1117;
+    --secondary-dark: #161b22;
+    --accent-warning: #ffd33d;
+    --accent-success: #00d6a1;
+    --accent-danger: #ff6b6b;
+    --accent-info: #79c0ff;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --border-color: #30363d;
+}
+
+body {
+    background-color: var(--primary-dark);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--secondary-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Card enhancements */
+.card {
+    backdrop-filter: blur(10px);
+    background: rgba(13, 17, 23, 0.8) !important;
+}
+
+/* Table enhancements */
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border-color);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Button enhancements */
+.btn-warning {
+    background: linear-gradient(145deg, #ffd33d, #ffa500);
+    border: none;
+    color: #000;
+    font-weight: 600;
+}
+
+.btn-outline-warning {
+    border-color: var(--accent-warning);
+    color: var(--accent-warning);
+}
+
+.btn-outline-warning:hover {
+    background-color: var(--accent-warning);
+    color: #000;
+}
+
+/* Progress bar enhancements */
+.progress {
+    background-color: var(--secondary-dark);
+}
+
+/* Badge enhancements */
+.badge {
+    font-weight: 500;
+}
+
+/* Navigation enhancements */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.sidebar {
+    background: var(--secondary-dark) !important;
+}
+
+.sidebar .nav-link {
+    border-radius: 6px;
+    margin: 2px 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    background: var(--accent-info);
+    color: #000 !important;
+    font-weight: 600;
+}
+
+/* Form enhancements */
+.form-control, .form-select {
+    background-color: var(--secondary-dark);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--secondary-dark);
+    border-color: var(--accent-warning);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(255, 211, 61, 0.25);
+}
+
+/* Chart container enhancements */
+.plotly-chart {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        z-index: 1000;
+        height: 100vh;
+    }
+
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Loading animations */
+.spinner-border {
+    border-width: 2px;
+}
+
+/* Signal indicators */
+.signal-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.signal-buy-indicator {
+    background-color: var(--accent-success);
+    box-shadow: 0 0 10px var(--accent-success);
+}
+
+.signal-sell-indicator {
+    background-color: var(--accent-danger);
+    box-shadow: 0 0 10px var(--accent-danger);
+}
+
+.signal-hold-indicator {
+    background-color: var(--text-secondary);
+}

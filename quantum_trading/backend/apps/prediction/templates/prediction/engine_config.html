@@ -1,0 +1,721 @@
+<!-- templates/prediction/engine_config.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Engine Configuration - Quantum Trading System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .config-card {
+        background: linear-gradient(145deg, #1a1d23, #23272e);
+        border: 1px solid #2d3138;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .config-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    .config-active {
+        border-left: 4px solid #00d6a1;
+    }
+    .config-inactive {
+        border-left: 4px solid #6c757d;
+    }
+    .param-group {
+        background: rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .param-slider {
+        width: 100%;
+    }
+    .slider-value {
+        min-width: 60px;
+        text-align: right;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom border-secondary">
+    <h1 class="h2 text-warning">
+        <i class="fas fa-cogs me-2"></i>Quantum Engine Configuration
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-warning me-2" data-bs-toggle="modal" data-bs-target="#createConfigModal">
+            <i class="fas fa-plus me-1"></i>New Configuration
+        </button>
+        <button class="btn btn-sm btn-outline-warning" onclick="exportConfig()">
+            <i class="fas fa-download me-1"></i>Export
+        </button>
+    </div>
+</div>
+
+<!-- Current Active Configuration -->
+{% if active_config %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card config-card config-active">
+            <div class="card-header border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0 text-warning">
+                        <i class="fas fa-play-circle me-2"></i>Active Configuration
+                    </h5>
+                    <p class="text-muted mb-0 mt-1">{{ active_config.name }}</p>
+                </div>
+                <div>
+                    <span class="badge bg-success me-2">ACTIVE</span>
+                    <span class="badge bg-info">v{{ active_config.version }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">Base Window Size</small>
+                        <h6>{{ active_config.base_window_size }}</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Particle Count</small>
+                        <h6>{{ active_config.particle_count }}</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Hurst Threshold</small>
+                        <h6>{{ active_config.hurst_threshold }}</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Created</small>
+                        <h6>{{ active_config.created_at|date:"M d, Y" }}</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Configuration List -->
+    <div class="col-lg-4 mb-4">
+        <div class="card config-card">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-list me-2"></i>Configurations
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for config in engine_configs %}
+                    <div class="list-group-item bg-dark border-secondary {% if config.is_active %}config-active{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 {% if config.is_active %}text-warning{% else %}text-light{% endif %}">
+                                    {{ config.name }}
+                                </h6>
+                                <p class="mb-1 text-muted small">
+                                    Window: {{ config.base_window_size }} |
+                                    Particles: {{ config.particle_count }} |
+                                    Hurst: {{ config.hurst_threshold }}
+                                </p>
+                                <small class="text-muted">
+                                    Created: {{ config.created_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            <div class="btn-group ms-2">
+                                {% if not config.is_active %}
+                                <button class="btn btn-sm btn-outline-success"
+                                        onclick="activateConfig({{ config.id }})"
+                                        title="Activate Configuration">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-warning"
+                                        onclick="editConfig({{ config.id }})"
+                                        title="Edit Configuration">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteConfig({{ config.id }})"
+                                        title="Delete Configuration">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% if config.is_active %}
+                        <span class="badge bg-success mt-2">Active</span>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item bg-dark text-center text-muted py-4">
+                        <i class="fas fa-cogs fa-2x mb-3"></i>
+                        <p>No configurations found</p>
+                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#createConfigModal">
+                            Create First Configuration
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card config-card mt-4">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-warning" onclick="createDefaultConfig()">
+                        <i class="fas fa-magic me-2"></i>Create Default Config
+                    </button>
+                    <button class="btn btn-outline-info" onclick="testAllConfigs()">
+                        <i class="fas fa-vial me-2"></i>Test All Configurations
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="resetToDefaults()">
+                        <i class="fas fa-undo me-2"></i>Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Editor -->
+    <div class="col-lg-8 mb-4">
+        <div class="card config-card">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-edit me-2"></i>Configuration Editor
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="configEditor">
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-cog fa-3x mb-3"></i>
+                        <p>Select a configuration to edit or create a new one</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="card config-card mt-4">
+            <div class="card-header border-bottom border-secondary">
+                <h5 class="card-title mb-0 text-warning">
+                    <i class="fas fa-chart-line me-2"></i>Configuration Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="configPerformance" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Configuration Modal -->
+<div class="modal fade" id="createConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark border border-warning">
+            <div class="modal-header border-bottom border-warning">
+                <h5 class="modal-title text-warning">
+                    <i class="fas fa-plus me-2"></i>Create New Configuration
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createConfigForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Configuration Name</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary"
+                                   id="configName" placeholder="e.g., High Precision v2.0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Based On</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="configTemplate">
+                                <option value="default">Default Template</option>
+                                <option value="high_precision">High Precision</option>
+                                <option value="fast_trading">Fast Trading</option>
+                                <option value="conservative">Conservative</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-light">Description</label>
+                        <textarea class="form-control bg-dark text-light border-secondary"
+                                  id="configDescription" rows="2"
+                                  placeholder="Describe this configuration..."></textarea>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="activateAfterCreate">
+                        <label class="form-check-label text-light" for="activateAfterCreate">
+                            Activate this configuration after creation
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top border-warning">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="createConfiguration()">
+                    <i class="fas fa-plus me-2"></i>Create Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Editor Template (Hidden) -->
+<div id="configEditorTemplate" class="d-none">
+    <form id="configForm">
+        <input type="hidden" id="configId">
+
+        <!-- Basic Parameters -->
+        <div class="param-group">
+            <h6 class="text-warning mb-3">
+                <i class="fas fa-sliders-h me-2"></i>Basic Parameters
+            </h6>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="baseWindowSize" class="form-label text-light">Base Window Size</label>
+                    <div class="d-flex align-items-center">
+                        <input type="range" class="form-range param-slider me-3"
+                               id="baseWindowSize" min="10" max="50" value="20">
+                        <span class="slider-value text-warning" id="baseWindowSizeValue">20</span>
+                    </div>
+                    <small class="text-muted">Window size for MA-DFA calculation</small>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="particleCount" class="form-label text-light">Particle Count</label>
+                    <div class="d-flex align-items-center">
+                        <input type="range" class="form-range param-slider me-3"
+                               id="particleCount" min="50" max="500" value="100">
+                        <span class="slider-value text-warning" id="particleCountValue">100</span>
+                    </div>
+                    <small class="text-muted">Number of particles for filter</small>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="hurstThreshold" class="form-label text-light">Hurst Threshold</label>
+                    <div class="d-flex align-items-center">
+                        <input type="range" class="form-range param-slider me-3"
+                               id="hurstThreshold" min="50" max="80" step="1" value="65">
+                        <span class="slider-value text-warning" id="hurstThresholdValue">0.65</span>
+                    </div>
+                    <small class="text-muted">Base Hurst threshold</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Quantum Parameters -->
+        <div class="param-group">
+            <h6 class="text-warning mb-3">
+                <i class="fas fa-atom me-2"></i>Advanced Quantum Parameters
+            </h6>
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="volatilityEntropyWeight" class="form-label text-light">Volatility Entropy Weight</label>
+                    <input type="number" class="form-control bg-dark text-light border-secondary"
+                           id="volatilityEntropyWeight" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="fractalDimensionWeight" class="form-label text-light">Fractal Dimension Weight</label>
+                    <input type="number" class="form-control bg-dark text-light border-secondary"
+                           id="fractalDimensionWeight" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="quantumChaosParameter" class="form-label text-light">Chaos Parameter</label>
+                    <input type="number" class="form-control bg-dark text-light border-secondary"
+                           id="quantumChaosParameter" min="3.0" max="4.0" step="0.1" value="4.0">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="learningRate" class="form-label text-light">Learning Rate</label>
+                    <input type="number" class="form-control bg-dark text-light border-secondary"
+                           id="learningRate" min="0.001" max="0.1" step="0.001" value="0.01">
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Strategy Parameters -->
+        <div class="param-group">
+            <h6 class="text-warning mb-3">
+                <i class="fas fa-robot me-2"></i>Trading Strategy Parameters
+            </h6>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="volatilityThresholdQuantile" class="form-label text-light">Volatility Threshold Quantile</label>
+                    <div class="d-flex align-items-center">
+                        <input type="range" class="form-range param-slider me-3"
+                               id="volatilityThresholdQuantile" min="50" max="95" value="75">
+                        <span class="slider-value text-warning" id="volatilityThresholdQuantileValue">0.75</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="fpnConfidenceThreshold" class="form-label text-light">FPN Confidence Threshold</label>
+                    <div class="d-flex align-items-center">
+                        <input type="range" class="form-range param-slider me-3"
+                               id="fpnConfidenceThreshold" min="50" max="95" value="70">
+                        <span class="slider-value text-warning" id="fpnConfidenceThresholdValue">0.70</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label text-light">Trading Mode</label>
+                    <select class="form-select bg-dark text-light border-secondary" id="tradingMode">
+                        <option value="conservative">Conservative</option>
+                        <option value="balanced" selected>Balanced</option>
+                        <option value="aggressive">Aggressive</option>
+                        <option value="quantum">Quantum Optimized</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-warning" onclick="saveConfiguration()">
+                        <i class="fas fa-save me-2"></i>Save Configuration
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="testConfiguration()">
+                        <i class="fas fa-vial me-2"></i>Test Configuration
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="duplicateConfiguration()">
+                        <i class="fas fa-copy me-2"></i>Duplicate
+                    </button>
+                    <button type="button" class="btn btn-outline-danger ms-auto" onclick="resetEditor()">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentConfigId = null;
+
+    // Initialize sliders
+    function initializeSliders() {
+        const sliders = document.querySelectorAll('.param-slider');
+        sliders.forEach(slider => {
+            const valueElement = document.getElementById(slider.id + 'Value');
+
+            // Set initial value
+            updateSliderValue(slider, valueElement);
+
+            // Update on change
+            slider.addEventListener('input', () => {
+                updateSliderValue(slider, valueElement);
+            });
+        });
+    }
+
+    function updateSliderValue(slider, valueElement) {
+        let value = parseFloat(slider.value);
+
+        // Format based on parameter type
+        if (slider.id.includes('Threshold') && !slider.id.includes('Quantile')) {
+            value = (value / 100).toFixed(2);
+        } else if (slider.id.includes('Quantile')) {
+            value = (value / 100).toFixed(2);
+        }
+
+        valueElement.textContent = value;
+    }
+
+    // Configuration management
+    function activateConfig(configId) {
+        if (confirm('Activate this configuration?')) {
+            fetch(`/prediction/api/activate-config/${configId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Configuration activated successfully!', 'success');
+                        location.reload();
+                    } else {
+                        showAlert('Error activating configuration: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Network error: ' + error, 'error');
+                });
+        }
+    }
+
+    function editConfig(configId) {
+        // Load configuration data
+        fetch(`/prediction/api/config/${configId}/`)
+            .then(response => response.json())
+            .then(config => {
+                currentConfigId = configId;
+
+                // Populate form with configuration data
+                document.getElementById('configId').value = config.id;
+                document.getElementById('baseWindowSize').value = config.base_window_size;
+                document.getElementById('baseWindowSizeValue').textContent = config.base_window_size;
+
+                document.getElementById('particleCount').value = config.particle_count;
+                document.getElementById('particleCountValue').textContent = config.particle_count;
+
+                document.getElementById('hurstThreshold').value = config.hurst_threshold * 100;
+                document.getElementById('hurstThresholdValue').textContent = config.hurst_threshold;
+
+                // Populate other fields...
+
+                // Show editor
+                document.getElementById('configEditor').innerHTML =
+                    document.getElementById('configEditorTemplate').innerHTML;
+
+                initializeSliders();
+            })
+            .catch(error => {
+                showAlert('Error loading configuration: ' + error, 'error');
+            });
+    }
+
+    function createConfiguration() {
+        const name = document.getElementById('configName').value;
+        const template = document.getElementById('configTemplate').value;
+        const description = document.getElementById('configDescription').value;
+        const activate = document.getElementById('activateAfterCreate').checked;
+
+        if (!name) {
+            showAlert('Please enter a configuration name', 'error');
+            return;
+        }
+
+        // Create configuration based on template
+        const configData = getTemplateConfig(template);
+        configData.name = name;
+        configData.description = description;
+
+        fetch('/prediction/api/update-config/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(configData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Configuration created successfully!', 'success');
+                    $('#createConfigModal').modal('hide');
+
+                    if (activate) {
+                        activateConfig(data.config_id);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    showAlert('Error creating configuration: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Network error: ' + error, 'error');
+            });
+    }
+
+    function saveConfiguration() {
+        const formData = new FormData(document.getElementById('configForm'));
+        const configData = {
+            id: currentConfigId,
+            name: 'Updated Configuration', // This would come from a name field
+            base_window_size: parseInt(document.getElementById('baseWindowSize').value),
+            particle_count: parseInt(document.getElementById('particleCount').value),
+            hurst_threshold: parseFloat(document.getElementById('hurstThresholdValue').textContent),
+            volatility_entropy_weight: parseFloat(document.getElementById('volatilityEntropyWeight').value),
+            fractal_dimension_weight: parseFloat(document.getElementById('fractalDimensionWeight').value),
+            quantum_chaos_parameter: parseFloat(document.getElementById('quantumChaosParameter').value),
+            learning_rate: parseFloat(document.getElementById('learningRate').value),
+            volatility_threshold_quantile: parseFloat(document.getElementById('volatilityThresholdQuantileValue').textContent),
+            fpn_confidence_threshold: parseFloat(document.getElementById('fpnConfidenceThresholdValue').textContent),
+            trading_mode: document.getElementById('tradingMode').value
+        };
+
+        fetch('/prediction/api/update-config/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(configData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Configuration saved successfully!', 'success');
+                    location.reload();
+                } else {
+                    showAlert('Error saving configuration: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Network error: ' + error, 'error');
+            });
+    }
+
+    function deleteConfig(configId) {
+        if (confirm('Are you sure you want to delete this configuration? This action cannot be undone.')) {
+            // Implement deletion logic
+            showAlert('Configuration deletion would be implemented here', 'info');
+        }
+    }
+
+    function testConfiguration() {
+        showAlert('Configuration testing would be implemented here', 'info');
+    }
+
+    function duplicateConfiguration() {
+        showAlert('Configuration duplication would be implemented here', 'info');
+    }
+
+    function resetEditor() {
+        document.getElementById('configEditor').innerHTML = `
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-cog fa-3x mb-3"></i>
+            <p>Select a configuration to edit or create a new one</p>
+        </div>
+    `;
+        currentConfigId = null;
+    }
+
+    function getTemplateConfig(template) {
+        const templates = {
+            default: {
+                base_window_size: 20,
+                particle_count: 100,
+                hurst_threshold: 0.65,
+                volatility_entropy_weight: 1.0,
+                fractal_dimension_weight: 1.0,
+                quantum_chaos_parameter: 4.0,
+                learning_rate: 0.01,
+                volatility_threshold_quantile: 0.75,
+                fpn_confidence_threshold: 0.7
+            },
+            high_precision: {
+                base_window_size: 30,
+                particle_count: 200,
+                hurst_threshold: 0.7,
+                volatility_entropy_weight: 1.2,
+                fractal_dimension_weight: 1.1,
+                quantum_chaos_parameter: 3.9,
+                learning_rate: 0.005,
+                volatility_threshold_quantile: 0.8,
+                fpn_confidence_threshold: 0.75
+            },
+            fast_trading: {
+                base_window_size: 15,
+                particle_count: 50,
+                hurst_threshold: 0.6,
+                volatility_entropy_weight: 0.8,
+                fractal_dimension_weight: 0.9,
+                quantum_chaos_parameter: 4.0,
+                learning_rate: 0.02,
+                volatility_threshold_quantile: 0.7,
+                fpn_confidence_threshold: 0.65
+            }
+        };
+
+        return templates[template] || templates.default;
+    }
+
+    function createDefaultConfig() {
+        document.getElementById('configName').value = 'Default Configuration';
+        document.getElementById('configTemplate').value = 'default';
+        $('#createConfigModal').modal('show');
+    }
+
+    function testAllConfigs() {
+        showAlert('Testing all configurations...', 'info');
+    }
+
+    function resetToDefaults() {
+        if (confirm('Reset all configurations to defaults? This will delete all custom configurations.')) {
+            showAlert('Reset functionality would be implemented here', 'info');
+        }
+    }
+
+    function exportConfig() {
+        showAlert('Export functionality would be implemented here', 'info');
+    }
+
+    // Utility functions
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' :
+            type === 'error' ? 'alert-danger' : 'alert-info';
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+    `;
+
+        document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
+
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Initialize performance chart
+    function initPerformanceChart() {
+        const data = [{
+            x: ['Config A', 'Config B', 'Config C', 'Config D'],
+            y: [76.5, 82.3, 68.9, 91.2],
+            type: 'bar',
+            marker: {
+                color: ['#00d6a1', '#00d6a1', '#ff6b6b', '#00d6a1']
+            }
+        }];
+
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#fff' },
+            xaxis: { gridcolor: '#2d3138' },
+            yaxis: {
+                gridcolor: '#2d3138',
+                title: 'Win Rate (%)',
+                range: [0, 100]
+            },
+            margin: { t: 30, r: 30, b: 50, l: 60 },
+            showlegend: false
+        };
+
+        Plotly.newPlot('configPerformance', data, layout);
+    }
+
+    $(document).ready(function() {
+        initPerformanceChart();
+    });
+</script>
+{% endblock %}
