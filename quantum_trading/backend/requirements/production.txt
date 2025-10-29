@@ -1,5 +1,0 @@
-# requirements/production.txt
--r base.txt
-sentry-sdk==1.35.0
-psycopg2==2.9.7
-hiredis==2.2.3
