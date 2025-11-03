@@ -28,144 +28,59 @@ jobs:
         options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup PHP with detailed output
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, gd, zip, curl, tokenizer
-          coverage: none
-          tools: composer
+    - name: Setup PHP with detailed output
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, gd, zip, curl, tokenizer
+        coverage: none
+        tools: composer
 
-      - name: Validate composer.json and composer.lock
-        run: |
-          composer validate --no-check-all
-          if [ -f composer.lock ]; then
-            echo "composer.lock exists"
-          else
-            echo "No composer.lock, will create one"
-          fi
+    - name: Validate composer.json and composer.lock
+      run: |
+        composer validate --no-check-all
+        if [ -f composer.lock ]; then
+          echo "composer.lock exists"
+        else
+          echo "No composer.lock, will create one"
+        fi
 
-      - name: Cache Composer packages
-        id: composer-cache
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
 
-      - name: Install dependencies with verbose output
-        run: |
-          composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist -v
-          echo "Composer install completed with exit code: $?"
+    - name: Install dependencies with verbose output
+      run: |
+        composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist -v
+        echo "Composer install completed with exit code: $?"
 
-      - name: Show composer diagnosis
-        run: composer diagnose
+    - name: Show composer diagnosis
+      run: composer diagnose
 
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - name: Generate key
-        run: php artisan key:generate
+    - name: Generate key
+      run: php artisan key:generate
 
-      - name: Directory permissions
-        run: chmod -R 775 storage bootstrap/cache
+    - name: Directory permissions
+      run: chmod -R 775 storage bootstrap/cache
 
-      - name: Create database
-        run: |
-          mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS laravel_test;"
-          mysql -h 127.0.0.1 -u root -ppassword -e "SHOW DATABASES;"
+    - name: Create database
+      run: |
+        mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS laravel_test;"
+        mysql -h 127.0.0.1 -u root -ppassword -e "SHOW DATABASES;"
 
-      - name: Execute migrations
-        run: php artisan migrate --force
+    - name: Execute migrations
+      run: php artisan migrate --force
 
-      - name: Execute tests
-        run: vendor/bin/phpunit --verbose# .github/workflows/laravel-ci-fixed.yml
-name: Laravel CI Fixed
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  laravel-tests:
-    runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: laravel_test
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      redis:
-        image: redis:alpine
-        ports:
-          - 6379:6379
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP with detailed output
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, gd, zip, curl, tokenizer
-          coverage: none
-          tools: composer
-
-      - name: Validate composer.json and composer.lock
-        run: |
-          composer validate --no-check-all
-          if [ -f composer.lock ]; then
-            echo "composer.lock exists"
-          else
-            echo "No composer.lock, will create one"
-          fi
-
-      - name: Cache Composer packages
-        id: composer-cache
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
-      - name: Install dependencies with verbose output
-        run: |
-          composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist -v
-          echo "Composer install completed with exit code: $?"
-
-      - name: Show composer diagnosis
-        run: composer diagnose
-
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Directory permissions
-        run: chmod -R 775 storage bootstrap/cache
-
-      - name: Create database
-        run: |
-          mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS laravel_test;"
-          mysql -h 127.0.0.1 -u root -ppassword -e "SHOW DATABASES;"
-
-      - name: Execute migrations
-        run: php artisan migrate --force
-
-      - name: Execute tests
-        run: vendor/bin/phpunit --verbose
+    - name: Execute tests
+      run: vendor/bin/phpunit --verbose
